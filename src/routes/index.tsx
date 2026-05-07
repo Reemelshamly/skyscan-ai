@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Satellite, Activity, Cpu } from "lucide-react";
-import { predictImage, type ModelId } from "@/lib/predict.functions";
+import { DEFAULT_MODEL_ID, predictImage } from "@/lib/predict.functions";
+import type { ModelId } from "@/lib/predict.functions";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultCard } from "@/components/ResultCard";
 import { HeatmapPanel } from "@/components/HeatmapPanel";
@@ -26,7 +27,7 @@ function Dashboard() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<PredictResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [modelId, setModelId] = useState<ModelId>("resnet_pretrained");
+  const [modelId, setModelId] = useState<ModelId>(DEFAULT_MODEL_ID);
 
   useEffect(() => {
     if (!file) { setPreviewUrl(null); return; }
@@ -67,7 +68,7 @@ function Dashboard() {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6 text-xs text-muted-foreground">
-            <Stat icon={<Cpu className="w-3.5 h-3.5" />} label="Model" value="ResNet-50" />
+            <Stat icon={<Cpu className="w-3.5 h-3.5" />} label="Model" value="ResNet-18 Scratch" />
             <Stat icon={<Activity className="w-3.5 h-3.5" />} label="Status" value="Online" valueClass="text-success" />
           </div>
         </div>
@@ -92,7 +93,7 @@ function Dashboard() {
           </h2>
         </section>
 
-        {/* Split workspace */}
+        {/* Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Input side */}
           <div className="space-y-6">

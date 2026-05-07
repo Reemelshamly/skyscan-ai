@@ -1,29 +1,35 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export const AVAILABLE_MODELS = [
-  { id: "resnet_pretrained", label: "ResNet18 · ImageNet FT", supportsCam: true, tag: "Accurate" },
-  { id: "resnet_scratch",    label: "ResNet18 · From Scratch", supportsCam: true, tag: "Baseline" },
-  { id: "mobilenet_v2",      label: "MobileNetV2",             supportsCam: true, tag: "Fast" },
-  { id: "efficientnet_b0",   label: "EfficientNet-B0",         supportsCam: true, tag: "Optional" },
+  { id: "resnet_scratch" as const, label: "ResNet-18 Scratch", tag: "ResNet-18" },
+  { id: "mobilenet_v2" as const, label: "MobileNet V2", tag: "MobileNet V2" },
 ] as const;
 
 export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"];
+export const DEFAULT_MODEL_ID: ModelId = AVAILABLE_MODELS[0].id;
 
 const SCENE_CLASSES = [
-  "industrial_area", "dense_residential", "forest", "river", "harbor",
-  "airport", "beach", "farmland", "freeway", "golf_course",
+  "airplane", "airport", "baseball_diamond", "basketball_court", "beach",
+  "bridge", "chaparral", "church", "circular_farmland", "cloud",
+  "commercial_area", "dense_residential", "desert", "forest", "freeway",
+  "golf_course", "ground_track_field", "harbor", "industrial_area", "intersection",
+  "island", "lake", "meadow", "medium_residential", "mobile_home_park",
+  "mountain", "overpass", "palace", "parking_lot", "railway",
+  "railway_station", "rectangular_farmland", "river", "roundabout", "runway",
+  "sea_ice", "ship", "snowberg", "sparse_residential", "stadium",
+  "storage_tank", "tennis_court", "terrace", "thermal_power_station", "wetland",
 ];
 
 export const predictImage = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => {
     if (!(data instanceof FormData)) throw new Error("Expected FormData");
     const file = data.get("image");
-    const modelName = String(data.get("model_name") ?? "resnet_pretrained");
+    const modelName = String(data.get("model_name") ?? DEFAULT_MODEL_ID);
     if (!(file instanceof File)) throw new Error("Missing image file");
     return { file, modelName };
   })
-  .handler(async ({ data }) => {
-    const apiUrl = process.env.PREDICT_API_URL;
+  .handler(async ({ data }: { data: { file: File; modelName: string } }) => {
+    const apiUrl = import.meta.env.VITE_PREDICT_API_URL as string | undefined;
 
     if (apiUrl) {
       try {
@@ -57,17 +63,10 @@ export const predictImage = createServerFn({ method: "POST" })
     }
 
     // Mock inference — varies slightly by model so the UI feels alive
-    const modelBias: Record<string, number> = {
-      resnet_pretrained: 0.18,
-      resnet_scratch: 0.05,
-      mobilenet_v2: 0.10,
-      efficientnet_b0: 0.15,
-    };
-    const delay = data.modelName === "mobilenet_v2" ? 600 : 1200;
-    await new Promise((r) => setTimeout(r, delay));
+    await new Promise((r) => setTimeout(r, 900));
     const idx = (data.file.name.length + data.file.size) % SCENE_CLASSES.length;
     const base = 0.62 + ((data.file.size % 25) / 100);
-    const confidence = Math.min(0.99, base + (modelBias[data.modelName] ?? 0));
+    const confidence = Math.min(0.99, base + 0.08);
     return {
       modelUsed: data.modelName,
       class: SCENE_CLASSES[idx],
