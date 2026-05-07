@@ -1,8 +1,14 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Cpu } from "lucide-react";
 
 interface Props {
-  result: { class: string; confidence: number; source: string; error?: string } | null;
+  result: {
+    class: string;
+    confidence: number;
+    source: string;
+    modelUsed?: string;
+    error?: string;
+  } | null;
 }
 
 export function ResultCard({ result }: Props) {
@@ -29,6 +35,14 @@ export function ResultCard({ result }: Props) {
         </span>
       </div>
 
+      {result.modelUsed && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Cpu className="w-3.5 h-3.5 text-neon-cyan" />
+          <span className="uppercase tracking-widest text-[10px]">Model</span>
+          <span className="font-mono text-foreground">{result.modelUsed}</span>
+        </div>
+      )}
+
       <div>
         <div className="text-xs text-muted-foreground mb-1">Predicted Class</div>
         <motion.div
@@ -49,6 +63,7 @@ export function ResultCard({ result }: Props) {
         </div>
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <motion.div
+            key={`${result.modelUsed}-${pct}`}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
