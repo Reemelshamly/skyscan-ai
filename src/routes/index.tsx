@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Satellite, Activity, Cpu } from "lucide-react";
-import { predictImage } from "@/lib/predict.functions";
+import { predictImage, type ModelId } from "@/lib/predict.functions";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultCard } from "@/components/ResultCard";
 import { HeatmapPanel } from "@/components/HeatmapPanel";
+import { ModelSelector } from "@/components/ModelSelector";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,6 +26,7 @@ function Dashboard() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<PredictResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modelId, setModelId] = useState<ModelId>("resnet_pretrained");
 
   useEffect(() => {
     if (!file) { setPreviewUrl(null); return; }
@@ -39,11 +41,12 @@ function Dashboard() {
     setResult(null);
     const fd = new FormData();
     fd.append("image", file);
+    fd.append("model_name", modelId);
     try {
       const res = await predict({ data: fd });
       setResult(res);
     } catch (err) {
-      setResult({ class: "error", confidence: 0, heatmap: "", source: "error", error: String(err) } as PredictResult);
+      setResult({ modelUsed: modelId, class: "error", confidence: 0, heatmap: "", source: "error", error: String(err) } as PredictResult);
     } finally {
       setLoading(false);
     }
@@ -90,6 +93,7 @@ function Dashboard() {
         {/* Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
             <UploadZone
               file={file}
               previewUrl={previewUrl}
