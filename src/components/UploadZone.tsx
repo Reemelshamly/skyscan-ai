@@ -36,11 +36,20 @@ export function UploadZone({ file, previewUrl, onFile, onAnalyze, loading }: Pro
       </div>
 
       <div
+        role="button"
+        aria-label="Upload or drop satellite image"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files); }}
         onClick={() => inputRef.current?.click()}
-        className={`relative cursor-pointer rounded-xl border-2 border-dashed transition-all overflow-hidden
+        className={`relative cursor-pointer rounded-xl border-2 border-dashed transition-all overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-cyan
           ${drag ? "border-neon-purple bg-neon-purple/5" : "border-border hover:border-neon-blue/60"}
           ${previewUrl ? "aspect-video" : "aspect-[2/1]"}`}
       >

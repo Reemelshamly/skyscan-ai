@@ -94,10 +94,9 @@ function Dashboard() {
         </section>
 
         {/* Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Input side */}
-          <div className="space-y-6">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground px-1">Input</div>
+        <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-24 self-start">
+            <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
             <UploadZone
               file={file}
               previewUrl={previewUrl}
@@ -106,9 +105,7 @@ function Dashboard() {
               loading={loading}
             />
           </div>
-          {/* Output side */}
-          <div className="space-y-6">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground px-1">Output</div>
+          <div className="lg:col-span-3 min-h-[420px]">
             <HeatmapPanel
               originalUrl={previewUrl}
               heatmap={result?.heatmap ?? ""}
