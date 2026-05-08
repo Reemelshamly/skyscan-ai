@@ -24,15 +24,27 @@ SCRATCH_CHECKPOINT_PATH = BACKEND_DIR / "resnet18_scratch_best.pth"
 FINETUNED_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "resnet18_finetuned_best.pth",
     PROJECT_ROOT / "resnet18_finetuned_best.pth",
+    PROJECT_ROOT / "ResNet18_Finetuned" / "resnet18_finetuned_best.pth",
 ]
 MOBILENET_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "mobilenetv2_best.pth",
     PROJECT_ROOT / "mobilenetv2_best.pth",
+    PROJECT_ROOT / "MobileNet" / "mobilenetv2_best.pth",
 ]
 EFFICIENTNET_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "efficientnet_b0_best.pth",
     PROJECT_ROOT / "efficientnet_b0_best.pth",
+    PROJECT_ROOT / "EfficientB0" / "efficientnet_b0_best.pth",
 ]
+
+KD_STUDENT_CHECKPOINT_CANDIDATES = [
+    BACKEND_DIR / "mobilenetv2_kd_best.pth",
+    PROJECT_ROOT / "mobilenetv2_kd_best.pth",
+    PROJECT_ROOT / "MobileNet" / "mobilenetv2_kd_best.pth",
+    PROJECT_ROOT / "MobileNet_Knowledge_Distillation" / "mobilenetv2_kd_best.pth",
+]
+
+KD_TEACHER_CHECKPOINT_PATH = PROJECT_ROOT / "EfficientB0" / "efficientnet_b0_best.pth"
 
 CLASSES = [
     "airplane",
@@ -267,9 +279,32 @@ def build_efficientnet_b0() -> torch.nn.Module:
     model.load_state_dict(state_dict)
     return model.eval().to(DEVICE)
 
-    input_name = session.get_inputs()[0].name
-    output_name = session.get_outputs()[0].name
-    return session, input_name, output_name
+
+def _resolve_kd_student_checkpoint() -> Path:
+    for path in KD_STUDENT_CHECKPOINT_CANDIDATES:
+        if path.exists():
+            print(f"[checkpoint] Found KD student checkpoint at: {path}")
+            return path
+    candidates_str = "; ".join(str(p) for p in KD_STUDENT_CHECKPOINT_CANDIDATES)
+    raise FileNotFoundError(
+        f"mobilenetv2_kd_best.pth not found. Searched: {candidates_str}"
+    )
+
+
+def build_mobilenet_v2_kd() -> torch.nn.Module:
+    """Build MobileNetV2 student model trained with Knowledge Distillation."""
+    try:
+        model = tv_models.mobilenet_v2(weights=None)
+        in_features = model.classifier[1].in_features
+        model.classifier[1] = nn.Linear(in_features, NUM_CLASSES)
+
+        ckpt_path = _resolve_kd_student_checkpoint()
+        state_dict = _load_state_dict_from_checkpoint(ckpt_path)
+        model.load_state_dict(state_dict, strict=False)
+        return model.eval().to(DEVICE)
+    except Exception as e:
+        print(f"[ERROR] Failed to build KD model: {type(e).__name__}: {e}")
+        raise
 
 
 def _last_conv_layer(model: torch.nn.Module):
@@ -363,14 +398,36 @@ def load_models():
     except Exception as e:
         print(f"[registry] FAILED to load efficientnet_b0: {e}")
 
+    try:
+        model = build_mobilenet_v2_kd()
+        MODELS["mobilenet_v2_kd"] = {
+            "model": model,
+            "label": "MobileNetV2 (Knowledge Distillation)",
+            "supports_cam": True,
+            "target_layer": _last_conv_layer(model),
+        }
+        print("[registry] loaded mobilenet_v2_kd: MobileNetV2 (Knowledge Distillation)")
+    except Exception as e:
+        print(f"[registry] FAILED to load mobilenet_v2_kd: {e}")
+
 
 app = FastAPI(title="OrbitVision Inference")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
+@app.get("/")
+def health():
+    return {"status": "ok", "message": "OrbitVision backend is running", "models": list(MODELS.keys())}
+
+
 @app.on_event("startup")
 def _startup():
+    print("[startup] OrbitVision backend initializing...")
     load_models()
+    print(f"[startup] ✅ Backend ready. Loaded {len(MODELS)} model(s): {', '.join(MODELS.keys())}")
+    print(f"[startup] Device: {DEVICE}")
+    print(f"[startup] Backend directory: {BACKEND_DIR}")
+    print(f"[startup] Project root: {PROJECT_ROOT}")
 
 
 @app.get("/models")
@@ -394,35 +451,47 @@ async def predict(
     image: UploadFile = File(...),
     model_name: str = Form("resnet_scratch"),
 ):
-    if model_name not in MODELS:
-        available = ", ".join(sorted(MODELS.keys())) or "none"
-        raise HTTPException(400, f"Unknown model '{model_name}'. Available: {available}")
+    try:
+        if model_name not in MODELS:
+            available = ", ".join(sorted(MODELS.keys())) or "none"
+            print(f"[predict] ERROR: Model '{model_name}' not found. Available: {available}")
+            raise HTTPException(400, f"Unknown model '{model_name}'. Available: {available}")
 
-    entry = MODELS[model_name]
+        print(f"[predict] Using model: {model_name}")
+        entry = MODELS[model_name]
 
-    pil = Image.open(io.BytesIO(await image.read())).convert("RGB")
-    x = preprocess(pil).unsqueeze(0)
+        pil = Image.open(io.BytesIO(await image.read())).convert("RGB")
+        x = preprocess(pil).unsqueeze(0)
 
-    model = entry["model"]
-    x = x.to(DEVICE)
+        model = entry["model"]
+        x = x.to(DEVICE)
 
-    with torch.no_grad():
-        logits = model(x)
-        probs = F.softmax(logits, dim=1)[0]
-        idx = int(probs.argmax())
-        conf = float(probs[idx])
+        with torch.no_grad():
+            logits = model(x)
+            probs = F.softmax(logits, dim=1)[0]
+            idx = int(probs.argmax())
+            conf = float(probs[idx])
 
-    heatmap_b64 = ""
-    if entry["supports_cam"] and entry["target_layer"] is not None:
-        try:
-            cam = gradcam(model, entry["target_layer"], x, idx)
-            heatmap_b64 = overlay_heatmap(pil, cam)
-        except Exception as e:
-            print(f"[gradcam] failed for {model_name}: {e}")
+        heatmap_b64 = ""
+        if entry["supports_cam"] and entry["target_layer"] is not None:
+            try:
+                cam = gradcam(model, entry["target_layer"], x, idx)
+                heatmap_b64 = overlay_heatmap(pil, cam)
+            except Exception as e:
+                print(f"[gradcam] failed for {model_name}: {e}")
 
-    return {
-        "model_used": model_name,
-        "class": CLASSES[idx],
-        "confidence": conf,
-        "heatmap": heatmap_b64,
-    }
+        result = {
+            "model_used": model_name,
+            "class": CLASSES[idx],
+            "confidence": conf,
+            "heatmap": heatmap_b64,
+        }
+        print(f"[predict] ✅ Result: {result['class']} ({result['confidence']:.2%})")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[predict] EXCEPTION: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Prediction failed: {str(e)}")

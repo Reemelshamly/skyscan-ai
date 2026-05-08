@@ -12,6 +12,7 @@ export const AVAILABLE_MODELS = [
   { id: "resnet_finetuned", label: "ResNet18 · Fine-tuned", tag: "Accurate", enabled: true },
   { id: "resnet_scratch", label: "ResNet18 · From Scratch", tag: "Baseline", enabled: true },
   { id: "mobilenet_v2", label: "MobileNetV2", tag: "Fast", enabled: true },
+  { id: "mobilenet_v2_kd", label: "MobileNetV2 · Knowledge Distillation", tag: "Fast+", enabled: true },
   { id: "efficientnet_b0", label: "EfficientNet-B0", tag: "Balanced", enabled: true },
 ] as const;
 
