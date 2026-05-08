@@ -11,6 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as tv_models
 import torchvision.transforms as T
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,20 @@ from PIL import Image
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BACKEND_DIR = Path(__file__).resolve().parent
-CHECKPOINT_PATH = BACKEND_DIR / "resnet18_scratch_best.pth"
+PROJECT_ROOT = BACKEND_DIR.parent.parent
+SCRATCH_CHECKPOINT_PATH = BACKEND_DIR / "resnet18_scratch_best.pth"
+FINETUNED_CHECKPOINT_CANDIDATES = [
+    BACKEND_DIR / "resnet18_finetuned_best.pth",
+    PROJECT_ROOT / "resnet18_finetuned_best.pth",
+]
+MOBILENET_CHECKPOINT_CANDIDATES = [
+    BACKEND_DIR / "mobilenetv2_best.pth",
+    PROJECT_ROOT / "mobilenetv2_best.pth",
+]
+EFFICIENTNET_CHECKPOINT_CANDIDATES = [
+    BACKEND_DIR / "efficientnet_b0_best.pth",
+    PROJECT_ROOT / "efficientnet_b0_best.pth",
+]
 
 CLASSES = [
     "airplane",
@@ -187,9 +201,75 @@ def _load_state_dict_from_checkpoint(checkpoint_path: Path):
 
 def build_resnet_scratch() -> torch.nn.Module:
     model = ResNet18(num_classes=NUM_CLASSES)
-    state_dict = _load_state_dict_from_checkpoint(CHECKPOINT_PATH)
+    state_dict = _load_state_dict_from_checkpoint(SCRATCH_CHECKPOINT_PATH)
     model.load_state_dict(state_dict)
     return model.eval().to(DEVICE)
+
+
+def _resolve_finetuned_checkpoint() -> Path:
+    for path in FINETUNED_CHECKPOINT_CANDIDATES:
+        if path.exists():
+            return path
+    raise FileNotFoundError(
+        "resnet18_finetuned_best.pth not found in backend or project root"
+    )
+
+
+def build_resnet_finetuned() -> torch.nn.Module:
+    model = tv_models.resnet18(weights=None)
+    in_features = model.fc.in_features
+    model.fc = nn.Sequential(
+        nn.Dropout(p=0.3),
+        nn.Linear(in_features, NUM_CLASSES),
+    )
+
+    ckpt_path = _resolve_finetuned_checkpoint()
+    state_dict = _load_state_dict_from_checkpoint(ckpt_path)
+    model.load_state_dict(state_dict)
+    return model.eval().to(DEVICE)
+
+
+def _resolve_mobilenet_checkpoint() -> Path:
+    for path in MOBILENET_CHECKPOINT_CANDIDATES:
+        if path.exists():
+            return path
+    raise FileNotFoundError("mobilenetv2_best.pth not found in backend or project root")
+
+
+def build_mobilenet_v2() -> torch.nn.Module:
+    model = tv_models.mobilenet_v2(weights=None)
+    in_features = model.classifier[1].in_features
+    model.classifier[1] = nn.Linear(in_features, NUM_CLASSES)
+
+    ckpt_path = _resolve_mobilenet_checkpoint()
+    state_dict = _load_state_dict_from_checkpoint(ckpt_path)
+    model.load_state_dict(state_dict)
+    return model.eval().to(DEVICE)
+
+
+def _resolve_efficientnet_checkpoint() -> Path:
+    for path in EFFICIENTNET_CHECKPOINT_CANDIDATES:
+        if path.exists():
+            return path
+    raise FileNotFoundError("efficientnet_b0_best.pth not found in backend or project root")
+
+
+def build_efficientnet_b0() -> torch.nn.Module:
+    model = tv_models.efficientnet_b0(weights=None)
+    in_features = model.classifier[1].in_features
+    model.classifier = nn.Sequential(
+        nn.Dropout(p=0.3, inplace=True),
+        nn.Linear(in_features, NUM_CLASSES),
+    )
+
+    ckpt_path = _resolve_efficientnet_checkpoint()
+    state_dict = _load_state_dict_from_checkpoint(ckpt_path)
+    model.load_state_dict(state_dict)
+    return model.eval().to(DEVICE)
+
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
+    return session, input_name, output_name
 
 
 def _last_conv_layer(model: torch.nn.Module):
@@ -247,6 +327,42 @@ def load_models():
     except Exception as e:
         print(f"[registry] FAILED to load resnet_scratch: {e}")
 
+    try:
+        model = build_resnet_finetuned()
+        MODELS["resnet_finetuned"] = {
+            "model": model,
+            "label": "ResNet18 (fine-tuned)",
+            "supports_cam": True,
+            "target_layer": _last_conv_layer(model),
+        }
+        print("[registry] loaded resnet_finetuned: ResNet18 (fine-tuned)")
+    except Exception as e:
+        print(f"[registry] FAILED to load resnet_finetuned: {e}")
+
+    try:
+        model = build_mobilenet_v2()
+        MODELS["mobilenet_v2"] = {
+            "model": model,
+            "label": "MobileNetV2 (pretrained)",
+            "supports_cam": True,
+            "target_layer": _last_conv_layer(model),
+        }
+        print("[registry] loaded mobilenet_v2: MobileNetV2 (pretrained)")
+    except Exception as e:
+        print(f"[registry] FAILED to load mobilenet_v2: {e}")
+
+    try:
+        model = build_efficientnet_b0()
+        MODELS["efficientnet_b0"] = {
+            "model": model,
+            "label": "EfficientNet-B0 (pretrained)",
+            "supports_cam": True,
+            "target_layer": _last_conv_layer(model),
+        }
+        print("[registry] loaded efficientnet_b0: EfficientNet-B0 (pretrained)")
+    except Exception as e:
+        print(f"[registry] FAILED to load efficientnet_b0: {e}")
+
 
 app = FastAPI(title="OrbitVision Inference")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -261,7 +377,12 @@ def _startup():
 def list_models():
     return {
         "models": [
-            {"id": k, "label": v["label"], "supports_cam": v["supports_cam"]}
+            {
+                "id": k,
+                "label": v["label"],
+                "supports_cam": v["supports_cam"],
+                "runtime": v.get("runtime", "torch"),
+            }
             for k, v in MODELS.items()
         ],
         "classes": CLASSES,
@@ -273,14 +394,17 @@ async def predict(
     image: UploadFile = File(...),
     model_name: str = Form("resnet_scratch"),
 ):
-    if model_name != "resnet_scratch" or model_name not in MODELS:
-        raise HTTPException(400, "Only 'resnet_scratch' is available right now.")
+    if model_name not in MODELS:
+        available = ", ".join(sorted(MODELS.keys())) or "none"
+        raise HTTPException(400, f"Unknown model '{model_name}'. Available: {available}")
 
     entry = MODELS[model_name]
-    model = entry["model"]
 
     pil = Image.open(io.BytesIO(await image.read())).convert("RGB")
-    x = preprocess(pil).unsqueeze(0).to(DEVICE)
+    x = preprocess(pil).unsqueeze(0)
+
+    model = entry["model"]
+    x = x.to(DEVICE)
 
     with torch.no_grad():
         logits = model(x)

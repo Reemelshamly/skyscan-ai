@@ -5,9 +5,9 @@ import { Satellite, Activity, Cpu } from "lucide-react";
 import { DEFAULT_MODEL_ID, predictImage } from "@/lib/predict.functions";
 import type { ModelId } from "@/lib/predict.functions";
 import { UploadZone } from "@/components/UploadZone";
+import { ModelSelector } from "@/components/ModelSelector";
 import { ResultCard } from "@/components/ResultCard";
 import { HeatmapPanel } from "@/components/HeatmapPanel";
-import { ModelSelector } from "@/components/ModelSelector";
 
 export const Route = createFileRoute("/")({
   head: () => ({
