@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Satellite, Activity, Cpu } from "lucide-react";
-import { DEFAULT_MODEL_ID, predictImage } from "@/lib/predict.functions";
-import type { ModelId } from "@/lib/predict.functions";
+import { Satellite, Cpu } from "lucide-react";
+import { AVAILABLE_MODELS, DEFAULT_MODEL_ID, predictImage, type ModelId } from "@/lib/predict.functions";
 import { UploadZone } from "@/components/UploadZone";
 import { ModelSelector } from "@/components/ModelSelector";
 import { ResultCard } from "@/components/ResultCard";
@@ -28,6 +27,7 @@ function Dashboard() {
   const [result, setResult] = useState<PredictResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [modelId, setModelId] = useState<ModelId>(DEFAULT_MODEL_ID);
+  const activeModelLabel = AVAILABLE_MODELS.find((model) => model.id === modelId)?.label ?? modelId;
 
   useEffect(() => {
     if (!file) { setPreviewUrl(null); return; }
@@ -68,8 +68,7 @@ function Dashboard() {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6 text-xs text-muted-foreground">
-            <Stat icon={<Cpu className="w-3.5 h-3.5" />} label="Model" value="ResNet-18 Scratch" />
-            <Stat icon={<Activity className="w-3.5 h-3.5" />} label="Status" value="Online" valueClass="text-success" />
+            <Stat icon={<Cpu className="w-3.5 h-3.5" />} label="Model" value={activeModelLabel} />
           </div>
         </div>
       </header>
