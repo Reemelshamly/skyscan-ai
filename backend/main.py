@@ -1,7 +1,3 @@
-# FastAPI backend for OrbitVision — single-model inference + Grad-CAM
-# Run: uvicorn main:app --reload --port 8000
-# Then set PREDICT_API_URL=http://localhost:8000 in your Lovable Cloud env.
-
 import base64
 import io
 from pathlib import Path
@@ -424,7 +420,7 @@ def health():
 def _startup():
     print("[startup] OrbitVision backend initializing...")
     load_models()
-    print(f"[startup] ✅ Backend ready. Loaded {len(MODELS)} model(s): {', '.join(MODELS.keys())}")
+    print(f"[startup] Backend ready. Loaded {len(MODELS)} model(s): {', '.join(MODELS.keys())}")
     print(f"[startup] Device: {DEVICE}")
     print(f"[startup] Backend directory: {BACKEND_DIR}")
     print(f"[startup] Project root: {PROJECT_ROOT}")
@@ -486,7 +482,7 @@ async def predict(
             "confidence": conf,
             "heatmap": heatmap_b64,
         }
-        print(f"[predict] ✅ Result: {result['class']} ({result['confidence']:.2%})")
+        print(f"[predict] Result: {result['class']} ({result['confidence']:.2%})")
         return result
     except HTTPException:
         raise

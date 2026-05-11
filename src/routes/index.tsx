@@ -59,10 +59,9 @@ function Dashboard() {
       <header className="border-b border-border/60 backdrop-blur-md sticky top-0 z-10 bg-background/40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-neon-blue to-neon-purple grid place-items-center glow">
-              <Satellite className="w-5 h-5 text-primary-foreground" />
-            </div>
             <div>
+              <Satellite className="w-6 h-6 text-primary" />
+
               <h1 className="text-base font-bold tracking-tight">OrbitVision</h1>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Scene Classifier · v1.0</p>
             </div>
@@ -93,23 +92,33 @@ function Dashboard() {
         </section>
 
         {/* Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-          <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-24 self-start">
+        <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          {/* LEFT: Controls - Combined Card */}
+          <div className="lg:sticky lg:top-24 self-start rounded-lg border border-border/40 bg-card/40 backdrop-blur-sm p-6 space-y-4">
             <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
-            <UploadZone
-              file={file}
-              previewUrl={previewUrl}
-              onFile={setFile}
-              onAnalyze={onAnalyze}
-              loading={loading}
-            />
+            <div className="border-t border-border/20 pt-4">
+              <UploadZone
+                file={file}
+                previewUrl={previewUrl}
+                onFile={setFile}
+                onAnalyze={onAnalyze}
+                loading={loading}
+              />
+            </div>
           </div>
-          <div className="lg:col-span-3 min-h-[420px]">
+          
+          {/* CENTER: Image & GradCAM */}
+          <div className="lg:col-span-2 min-h-[420px]">
             <HeatmapPanel
               originalUrl={previewUrl}
               heatmap={result?.heatmap ?? ""}
               loading={loading}
             />
+            <ResultCard result={result} />
+          </div>
+          
+          {/* RIGHT: Prediction Insights */}
+          <div className="min-h-[300px]">
             <ResultCard result={result} />
           </div>
         </section>
