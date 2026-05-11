@@ -73,27 +73,30 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+      {/* Toolbar */}
+      <div className="border-b border-border/60 bg-background/30 backdrop-blur-md sticky top-[65px] z-[9]">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
+        </div>
+      </div>
+
+      <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-6">
         {/* Hero */}
-        <section className="space-y-3 max-w-2xl">
+        <section className="space-y-2 max-w-3xl">
           <div className="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full glass-strong">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
             <span className="text-muted-foreground">Inference engine ready</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-            <span className="text-gradient">Classify</span> aerial scenes
-            <br />in real time.
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            <span className="text-gradient">Classify</span> aerial scenes in real time.
           </h2>
-          <p className="text-muted-foreground">
-            Upload satellite imagery and receive class predictions with confidence scoring
-            and Grad-CAM saliency overlays.
-          </p>
         </section>
 
-        {/* Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
+        {/* Split workspace */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Input side */}
+          <div className="space-y-6">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground px-1">Input</div>
             <UploadZone
               file={file}
               previewUrl={previewUrl}
@@ -101,14 +104,16 @@ function Dashboard() {
               onAnalyze={onAnalyze}
               loading={loading}
             />
-            <ResultCard result={result} />
           </div>
-          <div className="lg:col-span-3">
+          {/* Output side */}
+          <div className="space-y-6">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground px-1">Output</div>
             <HeatmapPanel
               originalUrl={previewUrl}
               heatmap={result?.heatmap ?? ""}
               loading={loading}
             />
+            <ResultCard result={result} />
           </div>
         </section>
 
