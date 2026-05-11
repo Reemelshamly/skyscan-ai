@@ -93,18 +93,16 @@ function Dashboard() {
 
         {/* Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-          {/* LEFT: Controls - Combined Card */}
-          <div className="lg:sticky lg:top-24 self-start rounded-lg border border-border/40 bg-card/40 backdrop-blur-sm p-6 space-y-4">
+          {/* LEFT: Controls */}
+          <div className="space-y-6 lg:sticky lg:top-24 self-start">
             <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
-            <div className="border-t border-border/20 pt-4">
-              <UploadZone
-                file={file}
-                previewUrl={previewUrl}
-                onFile={setFile}
-                onAnalyze={onAnalyze}
-                loading={loading}
-              />
-            </div>
+            <UploadZone
+              file={file}
+              previewUrl={previewUrl}
+              onFile={setFile}
+              onAnalyze={onAnalyze}
+              loading={loading}
+            />
           </div>
           
           {/* CENTER: Image & GradCAM */}
@@ -123,9 +121,7 @@ function Dashboard() {
           </div>
         </section>
 
-        <footer className="pt-6 text-center text-xs text-muted-foreground">
-          Backend: set <code className="px-1.5 py-0.5 rounded bg-muted text-foreground">PREDICT_API_URL</code> to your FastAPI <code>/predict</code> endpoint.
-        </footer>
+        
       </main>
     </div>
   );
