@@ -46,7 +46,7 @@ ONNX files: [EfficientB0](EfficientB0), [MobileNet](MobileNet), [ResNet18_Finetu
 - **EfficientNet-B0**: [EfficientB0/efficientnet_b0_best.pth](EfficientB0/efficientnet_b0_best.pth#L1)
 
 **Evaluation & Benchmarks**
-- See the notebooks in [evaluation](evaluation) for metrics, benchmarking, and visual analysis. Notable files: `benchmark.ipynb`, `evaluator.ipynb`, `metrics.ipynb`.
+- See the notebooks in [evaluation](evaluation) for metrics, benchmarking, and visual analysis. Notable files: `benchmark.ipynb`, `evaluator.ipynb`
 
 **Web App (Architecture)**
 - **Backend:** FastAPI app at [skyscan-ai/backend/main.py](skyscan-ai/backend/main.py#L1). It loads available model checkpoints, exposes a small inference API, and provides Grad-CAM heatmaps.
