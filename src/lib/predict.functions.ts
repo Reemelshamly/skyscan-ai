@@ -1,14 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export const AVAILABLE_MODELS = [
-  { id: "resnet_scratch" as const, label: "ResNet-18 Scratch", tag: "ResNet-18" },
-  { id: "mobilenet_v2" as const, label: "MobileNet V2", tag: "MobileNet V2" },
-] as const;
-
-export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"];
-export const DEFAULT_MODEL_ID: ModelId = AVAILABLE_MODELS[0].id;
-
-export const AVAILABLE_MODELS = [
   { id: "resnet_finetuned", label: "ResNet18 · Fine-tuned", tag: "Accurate", enabled: true },
   { id: "resnet_scratch", label: "ResNet18 · From Scratch", tag: "Baseline", enabled: true },
   { id: "mobilenet_v2", label: "MobileNetV2", tag: "Fast", enabled: true },
@@ -17,6 +9,7 @@ export const AVAILABLE_MODELS = [
 ] as const;
 
 export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"];
+export const DEFAULT_MODEL_ID: ModelId = AVAILABLE_MODELS[0].id;
 
 const SCENE_CLASSES = [
   "airplane", "airport", "baseball_diamond", "basketball_court", "beach",
