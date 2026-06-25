@@ -1,7 +1,6 @@
 import serverEntry from '../dist/server/index.js';
 
 function getHandler() {
-  // serverEntry may export default as the handler or an object with fetch
   if (typeof serverEntry === 'function') return serverEntry;
   if (serverEntry && typeof serverEntry.default === 'function') return serverEntry.default;
   if (serverEntry && typeof serverEntry.fetch === 'function') return serverEntry.fetch;
@@ -17,24 +16,40 @@ export default async function (req, res) {
     const host = req.headers.host || 'localhost';
     const url = `${protocol}://${host}${req.url}`;
 
+    let body = undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
+      body = req;
+    }
+
     const init = {
       method: req.method,
       headers: req.headers,
-      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req,
+      body,
     };
 
     const webReq = new Request(url, init);
-
-    const webRes = await (handler.length >= 3 ? handler(webReq, {}, {}) : handler(webReq));
+    const webRes = await handler(webReq, {}, {});
 
     res.statusCode = webRes.status || 200;
     webRes.headers.forEach((v, k) => res.setHeader(k, v));
 
-    const buffer = Buffer.from(await webRes.arrayBuffer());
-    res.end(buffer);
+    if (webRes.body) {
+      const reader = webRes.body.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(Buffer.from(value));
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    }
+    res.end();
   } catch (err) {
     console.error('SSR wrapper error:', err);
     res.statusCode = 500;
-    res.end('Internal Server Error');
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('Internal Server Error: ' + err.message);
   }
 }
