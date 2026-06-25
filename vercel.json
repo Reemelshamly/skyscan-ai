@@ -1,8 +1,8 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": ".output/public",
+  "outputDirectory": "dist/client",
   "framework": "vite",
   "env": {
-    "VITE_PREDICT_API_URL": "https://reem223-skyscan-ai-backend.hf.space/"
+    "VITE_PREDICT_API_URL": "https://reem223-skyscan-ai-backend.hf.space"
   }
 }
