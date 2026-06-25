@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".output/public",
+  "framework": "vite",
+  "env": {
+    "VITE_PREDICT_API_URL": "@vite-predict-api-url"
+  }
+}
