@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import serverEntry from '../dist/server/index.js';
 
 function getHandler() {
@@ -17,15 +18,20 @@ export default async function (req, res) {
     const url = `${protocol}://${host}${req.url}`;
 
     let body = undefined;
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
-      body = req;
-    }
-
     const init = {
       method: req.method,
       headers: req.headers,
-      body,
     };
+
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
+      if (typeof Readable.toWeb === 'function') {
+        body = Readable.toWeb(req);
+      } else {
+        body = req;
+      }
+      init.body = body;
+      init.duplex = 'half';
+    }
 
     const webReq = new Request(url, init);
     const webRes = await handler(webReq, {}, {});
