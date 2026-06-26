@@ -55,7 +55,14 @@ KD_STUDENT_CHECKPOINT_CANDIDATES = [
     WORKSPACE_ROOT / "MobileNet_Knowledge_Distillation" / "mobilenetv2_kd_best.pth",
 ]
 
-KD_TEACHER_CHECKPOINT_PATH = PROJECT_ROOT / "EfficientB0" / "efficientnet_b0_best.pth"
+KD_TEACHER_CHECKPOINT_CANDIDATES = [
+    BACKEND_DIR / "efficientnet_b0_best.pth",
+    PROJECT_ROOT / "backend" / "efficientnet_b0_best.pth",
+    PROJECT_ROOT / "efficientnet_b0_best.pth",
+    WORKSPACE_ROOT / "efficientnet_b0_best.pth",
+    PROJECT_ROOT / "EfficientB0" / "efficientnet_b0_best.pth",
+    WORKSPACE_ROOT / "EfficientB0" / "efficientnet_b0_best.pth",
+]
 
 CLASSES = [
     "airplane",
