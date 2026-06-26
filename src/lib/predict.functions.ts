@@ -28,6 +28,34 @@ type PredictInput = {
   modelName?: string;
 };
 
+async function sendPrediction(apiUrl: string, file: File, modelName: string, signal: AbortSignal) {
+  const fd = new FormData();
+  fd.append("image", file);
+  fd.append("model_name", modelName);
+
+  const res = await fetch(`${apiUrl.replace(/\/$/, "")}/predict`, {
+    method: "POST",
+    body: fd,
+    signal,
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    const error = new Error(body || `Backend ${res.status}`);
+    (error as Error & { status?: number }).status = res.status;
+    throw error;
+  }
+
+  const json = await res.json();
+  return {
+    modelUsed: String(json.model_used ?? modelName),
+    class: String(json.class ?? "unknown"),
+    confidence: Number(json.confidence ?? 0),
+    heatmap: String(json.heatmap ?? ""),
+    source: "backend" as const,
+  };
+}
+
 export async function predictImage({ file, modelName = DEFAULT_MODEL_ID }: PredictInput) {
   const apiUrl = import.meta.env.VITE_PREDICT_API_URL as string | undefined;
 
@@ -36,23 +64,15 @@ export async function predictImage({ file, modelName = DEFAULT_MODEL_ID }: Predi
     const timeoutId = setTimeout(() => controller.abort(), BACKEND_TIMEOUT_MS);
 
     try {
-      const fd = new FormData();
-      fd.append("image", file);
-      fd.append("model_name", modelName);
-      const res = await fetch(`${apiUrl.replace(/\/$/, "")}/predict`, {
-        method: "POST",
-        body: fd,
-        signal: controller.signal,
-      });
-      if (!res.ok) throw new Error(`Backend ${res.status}`);
-      const json = await res.json();
-      return {
-        modelUsed: String(json.model_used ?? modelName),
-        class: String(json.class ?? "unknown"),
-        confidence: Number(json.confidence ?? 0),
-        heatmap: String(json.heatmap ?? ""),
-        source: "backend" as const,
-      };
+      try {
+        return await sendPrediction(apiUrl, file, modelName, controller.signal);
+      } catch (err) {
+        const status = err instanceof Error ? (err as Error & { status?: number }).status : undefined;
+        if (status === 400 && modelName !== "resnet_scratch") {
+          return await sendPrediction(apiUrl, file, "resnet_scratch", controller.signal);
+        }
+        throw err;
+      }
     } catch (err) {
       console.error("Predict backend error:", err);
       const message =
