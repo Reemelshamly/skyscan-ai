@@ -25,7 +25,7 @@ export function ResultCard({ result }: Props) {
   const toneColor = { success: "var(--success)", warning: "var(--warning)", destructive: "var(--destructive)" }[tone];
 
   return (
-    <div className="glass rounded-2xl p-6 space-y-5">
+    <div className="glass rounded-2xl p-6 space-y-5 h-full flex flex-col">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
           Prediction
@@ -73,6 +73,7 @@ export function ResultCard({ result }: Props) {
         </div>
       </div>
 
+      <div className="mt-auto">
       {result.error ? (
         <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 rounded-lg p-3">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -84,6 +85,7 @@ export function ResultCard({ result }: Props) {
           <span>Inference completed successfully</span>
         </div>
       )}
+      </div>
     </div>
   );
 }

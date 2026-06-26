@@ -80,7 +80,7 @@ function Dashboard() {
         </section>
 
         {/* Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
           {/* LEFT: Controls */}
           <div className="space-y-6 lg:sticky lg:top-24 self-start">
             <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
@@ -103,7 +103,7 @@ function Dashboard() {
           </div>
           
           {/* RIGHT: Prediction Insights */}
-          <div className="min-h-[300px]">
+          <div className="h-full">
             <ResultCard result={result} />
           </div>
         </section>
