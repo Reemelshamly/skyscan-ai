@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
 COPY main.py .
-COPY resnet18_scratch_best.pth .
+COPY *.pth .
 
 # Expose port (HF Spaces exposes the port automatically)
 EXPOSE 7860
