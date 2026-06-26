@@ -11,6 +11,8 @@ export const AVAILABLE_MODELS = [
 export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"];
 export const DEFAULT_MODEL_ID: ModelId = AVAILABLE_MODELS[0].id;
 
+const BACKEND_TIMEOUT_MS = 25_000;
+
 const SCENE_CLASSES = [
   "airplane", "airport", "baseball_diamond", "basketball_court", "beach",
   "bridge", "chaparral", "church", "circular_farmland", "cloud",
@@ -35,6 +37,9 @@ export const predictImage = createServerFn({ method: "POST" })
     const apiUrl = import.meta.env.VITE_PREDICT_API_URL as string | undefined;
 
     if (apiUrl) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), BACKEND_TIMEOUT_MS);
+
       try {
         const fd = new FormData();
         fd.append("image", data.file);
@@ -42,6 +47,7 @@ export const predictImage = createServerFn({ method: "POST" })
         const res = await fetch(`${apiUrl.replace(/\/$/, "")}/predict`, {
           method: "POST",
           body: fd,
+          signal: controller.signal,
         });
         if (!res.ok) throw new Error(`Backend ${res.status}`);
         const json = await res.json();
@@ -54,14 +60,22 @@ export const predictImage = createServerFn({ method: "POST" })
         };
       } catch (err) {
         console.error("Predict backend error:", err);
+        const message =
+          err instanceof DOMException && err.name === "AbortError"
+            ? `Backend timed out after ${Math.round(BACKEND_TIMEOUT_MS / 1000)}s`
+            : err instanceof Error
+              ? err.message
+              : "Backend unreachable";
         return {
           modelUsed: data.modelName,
           class: "unknown",
           confidence: 0,
           heatmap: "",
           source: "error" as const,
-          error: err instanceof Error ? err.message : "Backend unreachable",
+          error: message,
         };
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
