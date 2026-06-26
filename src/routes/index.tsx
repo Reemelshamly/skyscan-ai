@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Satellite, Cpu } from "lucide-react";
 import { AVAILABLE_MODELS, DEFAULT_MODEL_ID, predictImage, type ModelId } from "@/lib/predict.functions";
 import { UploadZone } from "@/components/UploadZone";
@@ -21,7 +20,6 @@ export const Route = createFileRoute("/")({
 type PredictResult = Awaited<ReturnType<typeof predictImage>>;
 
 function Dashboard() {
-  const predict = useServerFn(predictImage);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<PredictResult | null>(null);
@@ -40,11 +38,8 @@ function Dashboard() {
     if (!file) return;
     setLoading(true);
     setResult(null);
-    const fd = new FormData();
-    fd.append("image", file);
-    fd.append("model_name", modelId);
     try {
-      const res = await predict({ data: fd });
+      const res = await predictImage({ file, modelName: modelId });
       setResult(res);
     } catch (err) {
       setResult({ modelUsed: modelId, class: "error", confidence: 0, heatmap: "", source: "error", error: String(err) } as PredictResult);
