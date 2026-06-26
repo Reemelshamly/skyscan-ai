@@ -16,29 +16,43 @@ from PIL import Image
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BACKEND_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BACKEND_DIR.parent.parent
+PROJECT_ROOT = BACKEND_DIR.parent
+WORKSPACE_ROOT = PROJECT_ROOT.parent
 SCRATCH_CHECKPOINT_PATH = BACKEND_DIR / "resnet18_scratch_best.pth"
 FINETUNED_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "resnet18_finetuned_best.pth",
+    PROJECT_ROOT / "backend" / "resnet18_finetuned_best.pth",
     PROJECT_ROOT / "resnet18_finetuned_best.pth",
+    WORKSPACE_ROOT / "resnet18_finetuned_best.pth",
     PROJECT_ROOT / "ResNet18_Finetuned" / "resnet18_finetuned_best.pth",
+    WORKSPACE_ROOT / "ResNet18_Finetuned" / "resnet18_finetuned_best.pth",
 ]
 MOBILENET_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "mobilenetv2_best.pth",
+    PROJECT_ROOT / "backend" / "mobilenetv2_best.pth",
     PROJECT_ROOT / "mobilenetv2_best.pth",
+    WORKSPACE_ROOT / "mobilenetv2_best.pth",
     PROJECT_ROOT / "MobileNet" / "mobilenetv2_best.pth",
+    WORKSPACE_ROOT / "MobileNet" / "mobilenetv2_best.pth",
 ]
 EFFICIENTNET_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "efficientnet_b0_best.pth",
+    PROJECT_ROOT / "backend" / "efficientnet_b0_best.pth",
     PROJECT_ROOT / "efficientnet_b0_best.pth",
+    WORKSPACE_ROOT / "efficientnet_b0_best.pth",
     PROJECT_ROOT / "EfficientB0" / "efficientnet_b0_best.pth",
+    WORKSPACE_ROOT / "EfficientB0" / "efficientnet_b0_best.pth",
 ]
 
 KD_STUDENT_CHECKPOINT_CANDIDATES = [
     BACKEND_DIR / "mobilenetv2_kd_best.pth",
+    PROJECT_ROOT / "backend" / "mobilenetv2_kd_best.pth",
     PROJECT_ROOT / "mobilenetv2_kd_best.pth",
+    WORKSPACE_ROOT / "mobilenetv2_kd_best.pth",
     PROJECT_ROOT / "MobileNet" / "mobilenetv2_kd_best.pth",
+    WORKSPACE_ROOT / "MobileNet" / "mobilenetv2_kd_best.pth",
     PROJECT_ROOT / "MobileNet_Knowledge_Distillation" / "mobilenetv2_kd_best.pth",
+    WORKSPACE_ROOT / "MobileNet_Knowledge_Distillation" / "mobilenetv2_kd_best.pth",
 ]
 
 KD_TEACHER_CHECKPOINT_PATH = PROJECT_ROOT / "EfficientB0" / "efficientnet_b0_best.pth"
