@@ -1,5 +1,6 @@
 import base64
 import io
+from threading import Lock
 from pathlib import Path
 
 import cv2
@@ -342,69 +343,54 @@ def overlay_heatmap(pil_img: Image.Image, cam: np.ndarray) -> str:
     return base64.b64encode(buf.tobytes()).decode()
 
 
+MODEL_BUILDERS = {
+    "resnet_scratch": {
+        "label": "ResNet18 (scratch)",
+        "builder": build_resnet_scratch,
+    },
+    "resnet_finetuned": {
+        "label": "ResNet18 (fine-tuned)",
+        "builder": build_resnet_finetuned,
+    },
+    "mobilenet_v2": {
+        "label": "MobileNetV2 (pretrained)",
+        "builder": build_mobilenet_v2,
+    },
+    "efficientnet_b0": {
+        "label": "EfficientNet-B0 (pretrained)",
+        "builder": build_efficientnet_b0,
+    },
+    "mobilenet_v2_kd": {
+        "label": "MobileNetV2 (Knowledge Distillation)",
+        "builder": build_mobilenet_v2_kd,
+    },
+}
+
 MODELS: dict = {}
+MODEL_LOAD_LOCK = Lock()
 
 
-def load_models():
-    try:
-        model = build_resnet_scratch()
-        MODELS["resnet_scratch"] = {
+def _load_model_entry(model_name: str):
+    if model_name in MODELS:
+        return MODELS[model_name]
+
+    if model_name not in MODEL_BUILDERS:
+        raise KeyError(model_name)
+
+    with MODEL_LOAD_LOCK:
+        if model_name in MODELS:
+            return MODELS[model_name]
+
+        builder = MODEL_BUILDERS[model_name]["builder"]
+        model = builder()
+        MODELS[model_name] = {
             "model": model,
-            "label": "ResNet18 (scratch)",
+            "label": MODEL_BUILDERS[model_name]["label"],
             "supports_cam": True,
             "target_layer": _last_conv_layer(model),
         }
-        print("[registry] loaded resnet_scratch: ResNet18 (scratch)")
-    except Exception as e:
-        print(f"[registry] FAILED to load resnet_scratch: {e}")
-
-    try:
-        model = build_resnet_finetuned()
-        MODELS["resnet_finetuned"] = {
-            "model": model,
-            "label": "ResNet18 (fine-tuned)",
-            "supports_cam": True,
-            "target_layer": _last_conv_layer(model),
-        }
-        print("[registry] loaded resnet_finetuned: ResNet18 (fine-tuned)")
-    except Exception as e:
-        print(f"[registry] FAILED to load resnet_finetuned: {e}")
-
-    try:
-        model = build_mobilenet_v2()
-        MODELS["mobilenet_v2"] = {
-            "model": model,
-            "label": "MobileNetV2 (pretrained)",
-            "supports_cam": True,
-            "target_layer": _last_conv_layer(model),
-        }
-        print("[registry] loaded mobilenet_v2: MobileNetV2 (pretrained)")
-    except Exception as e:
-        print(f"[registry] FAILED to load mobilenet_v2: {e}")
-
-    try:
-        model = build_efficientnet_b0()
-        MODELS["efficientnet_b0"] = {
-            "model": model,
-            "label": "EfficientNet-B0 (pretrained)",
-            "supports_cam": True,
-            "target_layer": _last_conv_layer(model),
-        }
-        print("[registry] loaded efficientnet_b0: EfficientNet-B0 (pretrained)")
-    except Exception as e:
-        print(f"[registry] FAILED to load efficientnet_b0: {e}")
-
-    try:
-        model = build_mobilenet_v2_kd()
-        MODELS["mobilenet_v2_kd"] = {
-            "model": model,
-            "label": "MobileNetV2 (Knowledge Distillation)",
-            "supports_cam": True,
-            "target_layer": _last_conv_layer(model),
-        }
-        print("[registry] loaded mobilenet_v2_kd: MobileNetV2 (Knowledge Distillation)")
-    except Exception as e:
-        print(f"[registry] FAILED to load mobilenet_v2_kd: {e}")
+        print(f"[registry] loaded {model_name}: {MODEL_BUILDERS[model_name]['label']}")
+        return MODELS[model_name]
 
 
 app = FastAPI(title="OrbitVision Inference")
@@ -419,8 +405,7 @@ def health():
 @app.on_event("startup")
 def _startup():
     print("[startup] OrbitVision backend initializing...")
-    load_models()
-    print(f"[startup] Backend ready. Loaded {len(MODELS)} model(s): {', '.join(MODELS.keys())}")
+    print("[startup] Model registry initialized. Models will load on first request.")
     print(f"[startup] Device: {DEVICE}")
     print(f"[startup] Backend directory: {BACKEND_DIR}")
     print(f"[startup] Project root: {PROJECT_ROOT}")
@@ -433,10 +418,11 @@ def list_models():
             {
                 "id": k,
                 "label": v["label"],
-                "supports_cam": v["supports_cam"],
-                "runtime": v.get("runtime", "torch"),
+                "supports_cam": True,
+                "runtime": "torch",
+                "loaded": k in MODELS,
             }
-            for k, v in MODELS.items()
+            for k, v in MODEL_BUILDERS.items()
         ],
         "classes": CLASSES,
     }
@@ -448,13 +434,13 @@ async def predict(
     model_name: str = Form("resnet_scratch"),
 ):
     try:
-        if model_name not in MODELS:
-            available = ", ".join(sorted(MODELS.keys())) or "none"
+        if model_name not in MODEL_BUILDERS:
+            available = ", ".join(sorted(MODEL_BUILDERS.keys())) or "none"
             print(f"[predict] ERROR: Model '{model_name}' not found. Available: {available}")
             raise HTTPException(400, f"Unknown model '{model_name}'. Available: {available}")
 
         print(f"[predict] Using model: {model_name}")
-        entry = MODELS[model_name]
+        entry = _load_model_entry(model_name)
 
         pil = Image.open(io.BytesIO(await image.read())).convert("RGB")
         x = preprocess(pil).unsqueeze(0)

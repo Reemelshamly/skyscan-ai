@@ -1,6 +1,5 @@
 .venv/
 venv/
-*.pth
 *.onnx
 __pycache__/
 *.pyc
