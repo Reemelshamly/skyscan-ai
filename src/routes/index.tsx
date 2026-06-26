@@ -67,13 +67,6 @@ function Dashboard() {
         </div>
       </header>
 
-      {/* Toolbar */}
-      <div className="border-b border-border/60 bg-background/30 backdrop-blur-md sticky top-[65px] z-[9]">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <ModelSelector value={modelId} onChange={setModelId} disabled={loading} />
-        </div>
-      </div>
-
       <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-6">
         {/* Hero */}
         <section className="space-y-2 max-w-3xl">
@@ -107,7 +100,6 @@ function Dashboard() {
               heatmap={result?.heatmap ?? ""}
               loading={loading}
             />
-            <ResultCard result={result} />
           </div>
           
           {/* RIGHT: Prediction Insights */}
