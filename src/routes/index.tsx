@@ -54,15 +54,14 @@ function Dashboard() {
       <header className="border-b border-border/60 backdrop-blur-md sticky top-0 z-10 bg-background/40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Satellite className="w-6 h-6 text-primary" />
             <div>
-              <Satellite className="w-6 h-6 text-primary" />
-
               <h1 className="text-base font-bold tracking-tight">OrbitVision</h1>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Scene Classifier · v1.0</p>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6 text-xs text-muted-foreground">
-            <Stat icon={<Cpu className="w-3.5 h-3.5" />} label="Model" value={activeModelLabel} />
+            <Stat icon={<Cpu className="w-3.5 h-3.5" />} label="Active model" value={activeModelLabel} />
           </div>
         </div>
       </header>
@@ -77,6 +76,10 @@ function Dashboard() {
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
             <span className="text-gradient">Classify</span> aerial scenes in real time.
           </h2>
+          <p className="max-w-2xl text-sm md:text-base text-muted-foreground leading-relaxed">
+            Choose a model, drop in one satellite image, and we’ll show the best guess plus a
+            heatmap that highlights what the model paid attention to.
+          </p>
         </section>
 
         {/* Grid */}

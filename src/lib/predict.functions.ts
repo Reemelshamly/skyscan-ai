@@ -52,6 +52,7 @@ async function sendPrediction(apiUrl: string, file: File, modelName: string, sig
     class: String(json.class ?? "unknown"),
     confidence: Number(json.confidence ?? 0),
     heatmap: String(json.heatmap ?? ""),
+    camError: String(json.cam_error ?? ""),
     source: "backend" as const,
   };
 }

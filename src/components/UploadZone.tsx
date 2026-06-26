@@ -20,7 +20,7 @@ export function UploadZone({ file, previewUrl, onFile, onAnalyze, loading }: Pro
   }, [onFile]);
 
   return (
-    <div className="glass rounded-2xl p-6 space-y-4">
+    <div className="glass rounded-2xl p-6 space-y-4 h-full flex flex-col">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
           Input · Satellite Image
@@ -68,8 +68,8 @@ export function UploadZone({ file, previewUrl, onFile, onAnalyze, loading }: Pro
               <Upload className="w-6 h-6 text-neon-cyan" />
             </div>
             <div className="text-center">
-              <p className="text-foreground font-medium">Drop a satellite image</p>
-              <p className="text-xs mt-1">PNG, JPG · or click to browse</p>
+              <p className="text-foreground font-medium">Drop a satellite image here</p>
+              <p className="text-xs mt-1">PNG or JPG. Click to browse or drag and drop.</p>
             </div>
           </div>
         )}
@@ -94,7 +94,7 @@ export function UploadZone({ file, previewUrl, onFile, onAnalyze, loading }: Pro
                    disabled:opacity-40 disabled:cursor-not-allowed
                    hover:shadow-[0_0_30px_-5px_var(--neon-purple)] transition-shadow"
       >
-        {loading ? "Analyzing…" : "Run Inference"}
+        {loading ? "Looking at the image…" : "Analyze image"}
       </motion.button>
     </div>
   );

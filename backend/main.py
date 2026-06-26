@@ -335,22 +335,23 @@ def _last_conv_layer(model: torch.nn.Module):
 
 def gradcam(model: torch.nn.Module, target_layer: torch.nn.Module, x: torch.Tensor, class_idx: int) -> np.ndarray:
     feats: dict = {}
-    grads: dict = {}
-
-    h1 = target_layer.register_forward_hook(lambda m, i, o: feats.setdefault("v", o))
-    h2 = target_layer.register_full_backward_hook(lambda m, gi, go: grads.setdefault("v", go[0]))
+    
+    h = target_layer.register_forward_hook(lambda m, i, o: feats.setdefault("v", o))
     try:
-        x = x.clone().requires_grad_(True)
-        out = model(x)
-        model.zero_grad()
-        out[0, class_idx].backward()
-        g = grads["v"][0].mean(dim=(1, 2))
-        f = feats["v"][0]
+        x_input = x.clone().requires_grad_(True)
+        out = model(x_input)
+        score = out[0, class_idx]
+        
+        f = feats.get("v")
+        if f is None:
+            raise RuntimeError("Failed to capture feature maps from target layer")
+        
+        grads = torch.autograd.grad(score, f, retain_graph=False)[0]
+        g = grads.mean(dim=(1, 2))
         cam = torch.relu((g[:, None, None] * f).sum(dim=0)).detach().cpu().numpy()
     finally:
-        h1.remove()
-        h2.remove()
-
+        h.remove()
+    
     cam = cv2.resize(cam, (224, 224))
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)
     return cam
@@ -361,7 +362,8 @@ def overlay_heatmap(pil_img: Image.Image, cam: np.ndarray) -> str:
     heat = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
     blended = cv2.addWeighted(img, 0.5, heat, 0.5, 0)
     _, buf = cv2.imencode(".png", blended)
-    return base64.b64encode(buf.tobytes()).decode()
+    b64 = base64.b64encode(buf.tobytes()).decode()
+    return f"data:image/png;base64,{b64}"
 
 
 MODEL_BUILDERS = {
@@ -476,18 +478,24 @@ async def predict(
             conf = float(probs[idx])
 
         heatmap_b64 = ""
+        cam_error = ""
+        
         if entry["supports_cam"] and entry["target_layer"] is not None:
             try:
                 cam = gradcam(model, entry["target_layer"], x, idx)
                 heatmap_b64 = overlay_heatmap(pil, cam)
             except Exception as e:
-                print(f"[gradcam] failed for {model_name}: {e}")
+                cam_error = f"Heatmap generation failed: {str(e)}"
+                print(f"[gradcam] {cam_error}")
+        else:
+            cam_error = "This model does not support visual explanations"
 
         result = {
             "model_used": model_name,
             "class": CLASSES[idx],
             "confidence": conf,
             "heatmap": heatmap_b64,
+            "cam_error": cam_error,
         }
         print(f"[predict] Result: {result['class']} ({result['confidence']:.2%})")
         return result

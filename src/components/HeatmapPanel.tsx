@@ -10,19 +10,24 @@ export function HeatmapPanel({ originalUrl, heatmap, loading }: Props) {
     : null;
 
   return (
-    <div className="glass rounded-2xl p-6 space-y-4">
-      <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
-        Visualization · Grad-CAM
-      </h2>
+    <div className="glass rounded-2xl p-6 space-y-4 h-full flex flex-col">
+      <div className="space-y-1">
+        <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+          Image preview and focus map
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Your image on the left, the model’s attention on the right.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
         <Frame label="Original" loading={loading}>
           {originalUrl ? (
             <img src={originalUrl} alt="original" className="w-full h-full object-cover" />
           ) : <Empty />}
         </Frame>
 
-        <Frame label="Activation" loading={loading}>
+        <Frame label="Focus map" loading={loading}>
           {originalUrl ? (
             <>
               <img src={originalUrl} alt="base" className="absolute inset-0 w-full h-full object-cover" />
@@ -45,9 +50,9 @@ export function HeatmapPanel({ originalUrl, heatmap, loading }: Props) {
 
 function Frame({ label, loading, children }: { label: string; loading: boolean; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 h-full flex flex-col">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
+      <div className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted flex-1 min-h-[240px]">
         {children}
         {loading && (
           <div className="absolute inset-0 overflow-hidden">
@@ -63,5 +68,5 @@ function Frame({ label, loading, children }: { label: string; loading: boolean; 
 }
 
 function Empty() {
-  return <div className="absolute inset-0 grid place-items-center text-xs text-muted-foreground">No image</div>;
+  return <div className="absolute inset-0 grid place-items-center text-xs text-muted-foreground">Waiting for an image</div>;
 }
