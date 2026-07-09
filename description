@@ -1,0 +1,398 @@
+# Remote Sensing Scene Classification Project
+
+## Project Overview
+
+The Remote Sensing Scene Classification Project is a deep learning-based image classification system designed to automatically recognize and categorize satellite and aerial images into different land-use and scene categories. The main objective of the project is to analyze remote sensing imagery and identify the type of environment or geographical region represented in the image. The system can classify scenes such as airports, forests, beaches, rivers, residential areas, industrial zones, mountains, farmlands, deserts, bridges, stadiums, and many other categories.
+
+This project combines concepts from Artificial Intelligence, Computer Vision, Deep Learning, and Remote Sensing to build an intelligent classification system capable of understanding high-resolution satellite imagery. The project demonstrates how convolutional neural networks (CNNs) can be applied in real-world applications such as environmental monitoring, urban planning, military surveillance, agriculture analysis, disaster management, and geographic information systems.
+
+---
+
+# Problem Statement
+
+Remote sensing images contain large amounts of visual information collected from satellites and aerial sensors. Manually analyzing these images is difficult, time-consuming, and requires domain experts. Traditional image processing techniques are often unable to handle the complexity and variation found in remote sensing scenes.
+
+The purpose of this project is to automate the process of scene recognition using deep learning models capable of extracting high-level spatial features from satellite images and accurately classifying them into predefined scene categories.
+
+---
+
+# Dataset Used
+
+The project uses the NWPU-RESISC45 Dataset dataset, which is one of the most popular benchmark datasets for remote sensing scene classification research.
+
+The dataset contains:
+
+* 31,500 remote sensing images
+* 45 scene categories
+* 700 images per category
+* High-resolution aerial and satellite images
+* Diverse environmental and geographical scenes
+
+Some example scene classes include:
+
+* Airport
+* Beach
+* Bridge
+* Church
+* Commercial Area
+* Dense Residential
+* Desert
+* Farmland
+* Forest
+* Golf Course
+* Harbor
+* Industrial Area
+* Lake
+* Mountain
+* Parking Lot
+* Railway Station
+* Residential Area
+* River
+* Stadium
+* Storage Tanks
+* Tennis Court
+
+The dataset is challenging because images within the same class may look very different, while images from different classes may appear visually similar.
+
+---
+
+# Project Objectives
+
+The main objectives of the project were:
+
+* Build an accurate remote sensing scene classification system
+* Train multiple deep learning models and compare their performance
+* Apply transfer learning to improve classification accuracy
+* Reduce overfitting using data augmentation and regularization techniques
+* Visualize model predictions using Grad-CAM
+* Deploy the trained model into an interactive web application
+* Optimize models for lightweight and efficient inference
+
+---
+
+# Technologies and Tools Used
+
+The project was implemented using several AI and software development technologies, including:
+
+### Programming Language
+
+* Python
+
+### Deep Learning Frameworks
+
+* PyTorch
+* Torchvision
+
+### Machine Learning Libraries
+
+* Scikit-learn
+* NumPy
+* Pandas
+
+### Computer Vision Libraries
+
+* OpenCV
+* PIL (Python Imaging Library)
+
+### Visualization Libraries
+
+* Matplotlib
+* Seaborn
+
+### Deployment Technologies
+
+* FastAPI
+* React + TypeScript
+* Tailwind CSS
+* ONNX Runtime
+
+---
+
+# Data Preprocessing
+
+Before training the models, extensive preprocessing was performed on the dataset.
+
+The preprocessing pipeline included:
+
+* Resizing all images to 224×224 pixels
+* Normalizing images using ImageNet mean and standard deviation
+* Splitting the dataset into:
+
+  * Training set (70%)
+  * Validation set (15%)
+  * Test set (15%)
+* Converting images into tensors
+* Loading data efficiently using PyTorch DataLoader
+
+To improve generalization and reduce overfitting, data augmentation techniques were applied during training, including:
+
+* Random horizontal flipping
+* Random rotation
+* Random cropping
+* Color jittering
+* Random resized cropping
+
+These augmentations helped the model learn robust visual features from different image variations.
+
+---
+
+# Deep Learning Models Implemented
+
+Several convolutional neural network architectures were implemented and compared during the project.
+
+## 1. ResNet18
+
+The first model implemented was ResNet18. This architecture uses residual connections that help train deeper neural networks without suffering from vanishing gradient problems.
+
+Two versions were tested:
+
+* ResNet18 trained from scratch
+* Pretrained ResNet18 using transfer learning
+
+The pretrained model achieved significantly better performance because it was initialized using ImageNet weights.
+
+---
+
+## 2. MobileNetV2
+
+MobileNetV2 was implemented as a lightweight and efficient model optimized for faster inference and deployment on low-resource devices.
+
+This model uses:
+
+* Depthwise separable convolutions
+* Inverted residual blocks
+* Linear bottlenecks
+
+MobileNetV2 provided a good balance between model size and accuracy.
+
+---
+
+## 3. EfficientNet-B0
+
+EfficientNet-B0 was the best-performing model in the project.
+
+The architecture uses compound scaling to balance:
+
+* Network depth
+* Width
+* Resolution
+
+Advantages of EfficientNet-B0:
+
+* High classification accuracy
+* Smaller number of parameters
+* Better feature extraction capability
+* Efficient computational performance
+
+The model achieved very high classification accuracy on the test set.
+
+---
+
+# Transfer Learning
+
+Transfer learning was one of the most important techniques used in the project.
+
+Instead of training models from scratch, pretrained ImageNet weights were used as initial weights. The models already learned useful low-level visual features such as:
+
+* Edges
+* Textures
+* Shapes
+* Patterns
+
+The final classification layers were replaced with new layers suitable for the 45 remote sensing classes.
+
+Fine-tuning was then performed on the dataset to adapt the models to satellite imagery.
+
+This significantly improved:
+
+* Accuracy
+* Training speed
+* Convergence stability
+
+---
+
+# Training Process
+
+The models were trained using GPU acceleration.
+
+Several training techniques were used:
+
+* CrossEntropyLoss with label smoothing
+* Adam optimizer
+* Learning rate scheduling
+* CosineAnnealingLR scheduler
+* Early stopping
+* Gradient clipping
+
+Training metrics such as:
+
+* Training loss
+* Validation loss
+* Accuracy
+* Precision
+* Recall
+
+were monitored during training.
+
+Model checkpoints were saved whenever validation accuracy improved.
+
+---
+
+# Knowledge Distillation
+
+Knowledge distillation was also implemented in the project.
+
+In this technique:
+
+* EfficientNet-B0 acted as the teacher model
+* MobileNetV2 acted as the student model
+
+The teacher transfers knowledge to the smaller student model using softened probability outputs.
+
+Benefits:
+
+* Smaller model size
+* Faster inference
+* Improved MobileNet performance
+* Better deployment efficiency
+
+---
+
+# Model Evaluation
+
+The models were evaluated using several metrics:
+
+* Accuracy
+* Precision
+* Recall
+* F1-score
+* Confusion Matrix
+
+Performance comparisons were made between all implemented architectures.
+
+The EfficientNet-B0 model achieved the highest performance among all tested models.
+
+---
+
+# Grad-CAM Visualization
+
+To make the system more interpretable, Grad-CAM visualization was implemented.
+
+Grad-CAM helps visualize which image regions the model focuses on while making predictions.
+
+The generated heatmaps highlighted important areas such as:
+
+* Buildings
+* Roads
+* Rivers
+* Forest regions
+* Runways
+* Residential structures
+
+This helped verify that the model was learning meaningful spatial features instead of random patterns.
+
+---
+
+# Model Optimization
+
+Several optimization techniques were applied to improve deployment efficiency.
+
+These included:
+
+* Dynamic quantization
+* Static quantization
+* ONNX export
+* ONNX Runtime inference
+
+The optimized models achieved:
+
+* Faster inference speed
+* Lower memory usage
+* Reduced model size
+
+while maintaining high accuracy.
+
+---
+
+# Web Application Deployment
+
+A full web application was developed for the project.
+
+The application allows users to:
+
+* Upload satellite images
+* Select different trained models
+* Predict scene categories
+* View confidence scores
+* Visualize Grad-CAM heatmaps
+
+### Frontend
+
+Built using:
+
+* React
+* TypeScript
+* Tailwind CSS
+
+### Backend
+
+Built using:
+
+* FastAPI
+* ONNX Runtime
+
+This created a complete AI-powered remote sensing analysis platform.
+
+---
+
+# Challenges Faced
+
+Several challenges were encountered during the project:
+
+* High similarity between certain scene categories
+* Large dataset size
+* Long training times
+* GPU memory limitations
+* Overfitting during training
+* Difficulty distinguishing visually similar classes
+
+These challenges were addressed using:
+
+* Transfer learning
+* Data augmentation
+* Efficient architectures
+* Regularization techniques
+* Learning rate scheduling
+
+---
+
+# Project Results
+
+The project successfully demonstrated that deep learning models can accurately classify remote sensing scenes from satellite imagery.
+
+Key achievements:
+
+* High classification accuracy
+* Successful comparison of multiple architectures
+* Lightweight deployment-ready models
+* Explainable AI visualizations
+* Interactive web application integration
+
+EfficientNet-B0 achieved the best overall performance, while MobileNetV2 provided efficient lightweight deployment capabilities.
+
+---
+
+# Conclusion
+
+This project demonstrates the power of deep learning and computer vision in analyzing remote sensing imagery. By combining transfer learning, advanced CNN architectures, model optimization, and explainable AI techniques, the system achieved accurate and efficient scene classification.
+
+The project also highlights the practical applications of AI in:
+
+* Environmental monitoring
+* Urban planning
+* Agriculture
+* Geographic analysis
+* Smart city systems
+* Disaster response
+
+The final system provides both high performance and real-world usability through an interactive web-based deployment platform.
